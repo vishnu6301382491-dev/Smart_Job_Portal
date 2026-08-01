@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  base: process.env.VERCEL ? "/" : process.env.GITHUB_ACTIONS ? "/Smart_Job_Portal/" : "/smart-job-portal/",
+  base: "./",
   plugins: [react()],
   resolve: {
     alias: {

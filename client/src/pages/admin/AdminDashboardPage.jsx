@@ -91,7 +91,10 @@ const AdminDashboardPage = () => {
                 <Badge variant="success">Online</Badge>
               </div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <Button as={Link} to="/admin/users">
+                <Button as={Link} to="/admin/agent" className="bg-cyan-600 hover:bg-cyan-500">
+                  🤖 AI Job Agent
+                </Button>
+                <Button as={Link} to="/admin/users" variant="secondary">
                   Manage Users
                 </Button>
                 <Button as={Link} to="/admin/jobs" variant="secondary">
@@ -100,7 +103,6 @@ const AdminDashboardPage = () => {
                 <Button as={Link} to="/admin/employers" variant="secondary">
                   Review Employers
                 </Button>
-                <Button variant="secondary">Export Reports</Button>
               </div>
             </div>
 

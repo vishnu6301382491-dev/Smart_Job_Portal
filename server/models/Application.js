@@ -1,5 +1,23 @@
 import mongoose from "mongoose";
 
+const timelineEntrySchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      required: true,
+    },
+    note: {
+      type: String,
+      default: "",
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false }
+);
+
 const applicationSchema = new mongoose.Schema(
   {
     job: {
@@ -27,12 +45,22 @@ const applicationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "reviewed", "shortlisted", "rejected", "hired"],
-      default: "pending",
+      enum: ["applied", "pending", "reviewed", "interview", "shortlisted", "offer", "hired", "rejected", "expired"],
+      default: "applied",
     },
     notes: {
       type: String,
       trim: true,
+    },
+    timeline: {
+      type: [timelineEntrySchema],
+      default: [
+        {
+          status: "applied",
+          note: "Application submitted successfully",
+          updatedAt: new Date(),
+        },
+      ],
     },
   },
   {
@@ -48,8 +76,8 @@ const applicationSchema = new mongoose.Schema(
 );
 
 applicationSchema.index({ job: 1, applicant: 1 }, { unique: true });
+applicationSchema.index({ applicant: 1, status: 1 });
 
 const Application = mongoose.model("Application", applicationSchema);
 
 export default Application;
-

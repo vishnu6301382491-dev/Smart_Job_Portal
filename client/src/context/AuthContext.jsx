@@ -3,11 +3,15 @@ import { authService } from "../services/authService";
 
 const AuthContext = createContext(null);
 
-const TOKEN_KEY = "smart_job_token";
-const USER_KEY = "smart_job_user";
+const TOKEN_KEY = "token";
+const USER_KEY = "user";
+
+const getStoredToken = () => {
+  return localStorage.getItem("token") || localStorage.getItem("smart_job_token");
+};
 
 const getStoredUser = () => {
-  const rawUser = localStorage.getItem(USER_KEY);
+  const rawUser = localStorage.getItem("user") || localStorage.getItem("smart_job_user");
 
   if (!rawUser) {
     return null;
@@ -21,17 +25,21 @@ const getStoredUser = () => {
 };
 
 const clearAuthStorage = () => {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem("token");
+  localStorage.removeItem("smart_job_token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("smart_job_user");
 };
 
 const storeAuth = (token, user) => {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  localStorage.setItem("token", token);
+  localStorage.setItem("user", JSON.stringify(user));
+  localStorage.setItem("smart_job_token", token);
+  localStorage.setItem("smart_job_user", JSON.stringify(user));
 };
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
+  const [token, setToken] = useState(() => getStoredToken());
   const [user, setUser] = useState(() => getStoredUser());
   const [authReady, setAuthReady] = useState(false);
 
@@ -42,12 +50,12 @@ export const AuthProvider = ({ children }) => {
       try {
         await authService.health();
       } catch {
-        // Ignore warm-up failures; the real request will surface any problems.
+        // Warm-up failure ignored
       }
     };
 
     const hydrateAuth = async () => {
-      const storedToken = localStorage.getItem(TOKEN_KEY);
+      const storedToken = getStoredToken();
 
       if (!storedToken) {
         if (!cancelled) {
@@ -99,7 +107,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await authService.logout();
     } catch {
-      // Ignore logout API failures and clear local session anyway.
+      // Clear session regardless
     }
 
     setToken(null);
@@ -109,7 +117,8 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = (nextUser) => {
     setUser(nextUser);
-    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+    localStorage.setItem("user", JSON.stringify(nextUser));
+    localStorage.setItem("smart_job_user", JSON.stringify(nextUser));
   };
 
   const value = {

@@ -13,12 +13,12 @@ const NotificationPreferenceControls = ({
   const matchedJobsEnabled = user?.notificationPrefs?.matchedJobs !== false;
 
   return (
-    <div className={`rounded-3xl border border-white/10 bg-white/5 p-5 ${className}`}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className={`rounded-3xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/5 p-4 sm:p-5 ${className}`}>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{title}</p>
-          <h3 className="mt-2 text-xl font-semibold text-white">Flip in-app alert types on the fly</h3>
-          <p className="mt-2 text-sm text-slate-400">{description}</p>
+          <p className="text-xs uppercase font-extrabold tracking-widest text-slate-500 dark:text-slate-400">{title}</p>
+          <h3 className="mt-1 text-base font-bold text-slate-900 dark:text-white">Flip in-app alert types on the fly</h3>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{description}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant={savedJobUpdatesEnabled ? "success" : "warning"}>
@@ -30,31 +30,33 @@ const NotificationPreferenceControls = ({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-          <p className="text-sm font-semibold text-white">Saved job alerts</p>
-          <p className="mt-1 text-sm text-slate-400">Get notified when a role you saved changes or gets removed.</p>
-          <div className="mt-4 flex justify-end">
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/60 p-3.5 shadow-sm">
+          <p className="text-xs font-bold text-slate-900 dark:text-white">Saved job alerts</p>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Get notified when a role you saved changes or gets removed.</p>
+          <div className="mt-3 flex justify-end">
             <Button
               type="button"
-              variant={savedJobUpdatesEnabled ? "ghost" : "secondary"}
+              variant={savedJobUpdatesEnabled ? "secondary" : "primary"}
               disabled={savingKey === "savedJobUpdates"}
               onClick={() => void onTogglePreference("savedJobUpdates")}
+              className="text-xs px-3 py-1.5"
             >
               {savingKey === "savedJobUpdates" ? "Saving..." : savedJobUpdatesEnabled ? "Disable" : "Enable"}
             </Button>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-          <p className="text-sm font-semibold text-white">Matching job alerts</p>
-          <p className="mt-1 text-sm text-slate-400">Get notified when a new role matches the skills in your profile.</p>
-          <div className="mt-4 flex justify-end">
+        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/60 p-3.5 shadow-sm">
+          <p className="text-xs font-bold text-slate-900 dark:text-white">Matching job alerts</p>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Get notified when a new role matches your profile skills.</p>
+          <div className="mt-3 flex justify-end">
             <Button
               type="button"
-              variant={matchedJobsEnabled ? "ghost" : "secondary"}
+              variant={matchedJobsEnabled ? "secondary" : "primary"}
               disabled={savingKey === "matchedJobs"}
               onClick={() => void onTogglePreference("matchedJobs")}
+              className="text-xs px-3 py-1.5"
             >
               {savingKey === "matchedJobs" ? "Saving..." : matchedJobsEnabled ? "Disable" : "Enable"}
             </Button>

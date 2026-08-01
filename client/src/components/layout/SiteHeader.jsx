@@ -8,10 +8,10 @@ import { userService } from "../../services/userService";
 
 const navLinkClass = ({ isActive }) =>
   [
-    "rounded-lg px-3 py-2 text-sm transition",
+    "rounded-xl px-3.5 py-2 text-sm font-semibold transition-all duration-200",
     isActive
-      ? "bg-[var(--surface-soft)] text-[var(--page-text)]"
-      : "text-[var(--page-text-soft)] hover:bg-[var(--surface-soft)] hover:text-[var(--page-text)]",
+      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-500/20"
+      : "text-[var(--text-secondary)] hover:bg-[var(--surface-soft)] hover:text-[var(--text-primary)]",
   ].join(" ");
 
 export const SiteHeader = () => {
@@ -21,6 +21,7 @@ export const SiteHeader = () => {
   const [recentNotifications, setRecentNotifications] = useState([]);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const [preferenceSavingKey, setPreferenceSavingKey] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const notificationMenuRef = useRef(null);
   const navigate = useNavigate();
 
@@ -37,7 +38,6 @@ export const SiteHeader = () => {
 
       try {
         const { data } = await userService.notificationSummary();
-
         if (!cancelled) {
           setUnreadNotifications(data.unreadCount || 0);
         }
@@ -73,7 +73,6 @@ export const SiteHeader = () => {
     const loadRecentNotifications = async () => {
       try {
         const { data } = await userService.notifications({ limit: 5 });
-
         if (!cancelled) {
           setRecentNotifications(data.notifications || []);
         }
@@ -113,7 +112,7 @@ export const SiteHeader = () => {
         await userService.markNotificationRead(notification._id);
         window.dispatchEvent(new Event("smart-job-notifications-updated"));
       } catch {
-        // Keep the dropdown responsive even if the read update fails.
+        // Keep preview robust
       }
     }
 
@@ -127,14 +126,12 @@ export const SiteHeader = () => {
       window.dispatchEvent(new Event("smart-job-notifications-updated"));
       setNotificationMenuOpen(false);
     } catch {
-      // Ignore dropdown action failures and let the inbox page surface errors.
+      // Ignore dropdown failures
     }
   };
 
   const handleTogglePreference = async (prefKey) => {
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
     const currentPrefs = user.notificationPrefs || {};
     const nextValue = currentPrefs[prefKey] === false;
@@ -154,28 +151,31 @@ export const SiteHeader = () => {
         updateUser(data.user);
       }
     } catch {
-      // Keep the dropdown usable; the profile page can surface any error later.
+      // Keep dropdown usable
     } finally {
       setPreferenceSavingKey("");
     }
   };
 
   return (
-    <header
-      className="sticky top-0 z-40 border-b backdrop-blur-xl"
-      style={{ backgroundColor: "var(--surface-strong)", borderColor: "var(--border-color)" }}
-    >
+    <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl transition-all">
       <div className="page-shell flex h-16 items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-cyan-400/15 text-cyan-300 ring-1 ring-cyan-400/20">
+        {/* Brand Logo */}
+        <Link to="/" className="flex items-center gap-3 group">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-lg shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform">
             SJ
           </span>
           <div>
-            <p className="text-sm font-semibold text-[var(--page-text)]">Smart Job Portal</p>
-            <p className="text-xs text-[var(--page-text-muted)]">Work with clarity</p>
+            <p className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Smart<span className="text-blue-600 dark:text-blue-400">Job</span>
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-semibold">
+              Job Intelligence
+            </p>
           </div>
         </Link>
 
+        {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 md:flex">
           <NavLink to="/" className={navLinkClass} end>
             Home
@@ -185,148 +185,175 @@ export const SiteHeader = () => {
           </NavLink>
           {isAuthenticated ? (
             <>
+              <NavLink to="/tracker" className={navLinkClass}>
+                Job Tracker
+              </NavLink>
               <NavLink to="/dashboard" className={navLinkClass}>
                 Dashboard
               </NavLink>
               <NavLink to="/saved-jobs" className={navLinkClass}>
                 Saved Jobs
               </NavLink>
-              <NavLink to="/profile" className={navLinkClass}>
-                Profile
-              </NavLink>
             </>
           ) : null}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" type="button" onClick={toggleTheme}>
-            {theme === "dark" ? "Light Mode" : "Dark Mode"}
-          </Button>
+        {/* Header Right Actions */}
+        <div className="flex items-center gap-2.5">
+          {/* Dark / Light Mode Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white hover:border-blue-500/40 transition-all text-sm flex items-center gap-1.5 font-medium"
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+          </button>
+
+          {/* Notifications Dropdown Trigger */}
           {isAuthenticated ? (
             <div className="relative" ref={notificationMenuRef}>
-              <Button
+              <button
                 type="button"
-                variant="secondary"
                 onClick={() => setNotificationMenuOpen((current) => !current)}
-                className="relative"
+                className="relative p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white hover:border-blue-500/40 transition-all text-sm font-medium"
+                aria-label="Notifications"
               >
-                Notifications
+                🔔
                 {unreadNotifications > 0 ? (
-                  <span className="ml-2 inline-flex min-w-6 items-center justify-center rounded-full bg-cyan-400/15 px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
+                  <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-extrabold text-white shadow-sm shadow-blue-500/40">
                     {unreadNotifications}
                   </span>
                 ) : null}
-              </Button>
+              </button>
 
+              {/* Notification Menu Card */}
               {notificationMenuOpen ? (
-                <div className="absolute right-0 top-12 w-96 rounded-3xl border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-black/40 backdrop-blur-xl">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-white">Notification preferences</p>
-                        <p className="text-xs text-slate-400">Quick glance at what is currently enabled.</p>
-                      </div>
-                      <Button as={Link} to="/profile" variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => setNotificationMenuOpen(false)}>
-                        Edit
-                      </Button>
+                <div className="absolute right-0 top-12 w-96 rounded-3xl border border-slate-200 dark:border-white/15 bg-white dark:bg-slate-900 p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 z-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">Notifications Inbox</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{unreadNotifications} unread alerts</p>
                     </div>
-
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <div className="rounded-xl border border-white/10 bg-slate-950/30 p-3">
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">Digests</p>
-                        <p className="mt-1 text-sm font-medium text-white">
-                          {user?.notificationPrefs?.emailDigests ? user.notificationPrefs.digestFrequency || "Daily" : "Off"}
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-white/10 bg-slate-950/30 p-3">
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">Unread</p>
-                        <p className="mt-1 text-sm font-medium text-white">{unreadNotifications}</p>
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleMarkAllRead()}
+                      className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Mark all read
+                    </button>
                   </div>
 
                   <NotificationPreferenceControls
                     user={user}
                     onTogglePreference={handleTogglePreference}
                     savingKey={preferenceSavingKey}
-                    title="Notification preferences"
-                    description="Quick glance at what is currently enabled."
-                    className="mt-3 rounded-2xl p-4"
+                    title="Quick Preferences"
+                    description="Toggle active alert channels."
+                    className="rounded-2xl p-3"
                   />
 
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-white">Recent alerts</p>
-                      <p className="text-xs text-slate-400">{unreadNotifications} unread</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleMarkAllRead()}
-                      className="text-xs font-medium text-cyan-300 transition hover:text-cyan-200"
-                    >
-                      Mark all read
-                    </button>
-                  </div>
-
-                  <div className="mt-4 space-y-2">
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
                     {recentNotifications.length > 0 ? (
                       recentNotifications.map((notification) => (
                         <button
                           key={notification._id}
                           type="button"
                           onClick={() => void handlePreviewNotification(notification)}
-                          className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-cyan-400/30 hover:bg-white/8"
+                          className="w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3 text-left transition hover:border-blue-500/40"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium text-white">{notification.title}</p>
-                            {!notification.readAt ? (
-                              <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
-                            ) : null}
+                            <p className="text-xs font-bold text-slate-900 dark:text-white">{notification.title}</p>
+                            {!notification.readAt ? <span className="h-2 w-2 rounded-full bg-blue-500" /> : null}
                           </div>
-                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{notification.message}</p>
+                          <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">{notification.message}</p>
                         </button>
                       ))
                     ) : (
-                      <p className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-4 text-sm text-slate-400">
+                      <p className="p-4 text-center text-xs text-slate-600 dark:text-slate-400 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl bg-slate-50/50 dark:bg-white/5 font-medium">
                         No notifications yet.
                       </p>
                     )}
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <Button as={Link} to="/notifications" variant="secondary" className="flex-1" onClick={() => setNotificationMenuOpen(false)}>
-                      Open inbox
-                    </Button>
-                    <Button as={Link} to="/profile" variant="ghost" className="flex-1" onClick={() => setNotificationMenuOpen(false)}>
-                      Settings
+                  <div className="flex gap-2">
+                    <Button
+                      as={Link}
+                      to="/notifications"
+                      variant="secondary"
+                      className="flex-1 text-xs font-semibold"
+                      onClick={() => setNotificationMenuOpen(false)}
+                    >
+                      View All Inbox
                     </Button>
                   </div>
                 </div>
               ) : null}
             </div>
           ) : null}
+
+          {/* User Auth Controls */}
           {isAuthenticated ? (
-            <>
-              <div className="hidden text-right sm:block">
-                <p className="text-sm font-medium text-[var(--page-text)]">{user?.name}</p>
-                <p className="text-xs capitalize text-[var(--page-text-muted)]">{user?.role}</p>
-              </div>
-              <Button variant="ghost" type="button" onClick={() => void logout()}>
+            <div className="flex items-center gap-2">
+              <Link to="/profile" className="hidden sm:flex items-center gap-2 group">
+                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                  {user?.name?.[0]?.toUpperCase() || "U"}
+                </div>
+                <div className="text-left text-xs">
+                  <p className="font-semibold text-slate-900 dark:text-white leading-tight">{user?.name}</p>
+                  <p className="capitalize text-slate-500 dark:text-slate-400 leading-tight">{user?.role}</p>
+                </div>
+              </Link>
+              <Button variant="ghost" className="text-xs px-3 py-2" onClick={() => void logout()}>
                 Logout
               </Button>
-            </>
+            </div>
           ) : (
-            <>
-              <Button as={Link} to="/login" variant="ghost">
+            <div className="flex items-center gap-2">
+              <Button as={Link} to="/login" variant="ghost" className="text-xs px-3 py-2">
                 Login
               </Button>
-              <Button as={Link} to="/register">
+              <Button as={Link} to="/register" variant="primary" className="text-xs px-3.5 py-2">
                 Sign Up
               </Button>
-            </>
+            </div>
           )}
+
+          {/* Mobile Hamburger Toggle */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="md:hidden p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white"
+          >
+            ☰
+          </button>
         </div>
       </div>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen ? (
+        <div className="md:hidden border-t border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950 p-4 space-y-2 animate-in slide-in-from-top duration-200">
+          <NavLink to="/" onClick={() => setMobileMenuOpen(false)} className={navLinkClass} end>
+            Home
+          </NavLink>
+          <NavLink to="/jobs" onClick={() => setMobileMenuOpen(false)} className={navLinkClass}>
+            Jobs
+          </NavLink>
+          {isAuthenticated ? (
+            <>
+              <NavLink to="/tracker" onClick={() => setMobileMenuOpen(false)} className={navLinkClass}>
+                Job Tracker
+              </NavLink>
+              <NavLink to="/dashboard" onClick={() => setMobileMenuOpen(false)} className={navLinkClass}>
+                Dashboard
+              </NavLink>
+              <NavLink to="/saved-jobs" onClick={() => setMobileMenuOpen(false)} className={navLinkClass}>
+                Saved Jobs
+              </NavLink>
+            </>
+          ) : null}
+        </div>
+      ) : null}
     </header>
   );
 };

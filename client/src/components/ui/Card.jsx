@@ -1,4 +1,7 @@
-export const Card = ({ className = "", ...props }) => {
-  return <div className={`glass-panel rounded-2xl p-6 ${className}`} {...props} />;
+export const Card = ({ children, className = "", ...props }) => {
+  return (
+    <div className={`glass-card p-6 ${className}`} {...props}>
+      {children}
+    </div>
+  );
 };
-

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 import PageShell from "../_PageShell";
 import { Input } from "../../components/ui/Input";
 import { Textarea } from "../../components/ui/Textarea";
@@ -31,8 +32,6 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [resumeFile, setResumeFile] = useState(null);
 
   useEffect(() => {
@@ -40,14 +39,9 @@ const ProfilePage = () => {
 
     const loadProfile = async () => {
       setLoading(true);
-      setError("");
-
       try {
         const { data } = await userService.me();
-
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         const profile = data.user;
         setCurrentUser(profile);
@@ -67,7 +61,7 @@ const ProfilePage = () => {
         });
       } catch (err) {
         if (!cancelled) {
-          setError(getErrorMessage(err, "Unable to load your profile"));
+          toast.error(getErrorMessage(err, "Unable to load your profile"));
         }
       } finally {
         if (!cancelled) {
@@ -77,7 +71,6 @@ const ProfilePage = () => {
     };
 
     loadProfile();
-
     return () => {
       cancelled = true;
     };
@@ -86,16 +79,15 @@ const ProfilePage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSaving(true);
-    setMessage("");
-    setError("");
+    const toastId = toast.loading("Saving profile updates...");
 
     try {
       const { data } = await userService.updateProfile(form);
       setCurrentUser(data.user);
       updateUser(data.user);
-      setMessage("Profile updated successfully.");
+      toast.success("Profile updated successfully! ✨", { id: toastId });
     } catch (err) {
-      setError(getErrorMessage(err, "Unable to update profile"));
+      toast.error(getErrorMessage(err, "Unable to update profile"), { id: toastId });
     } finally {
       setSaving(false);
     }
@@ -103,24 +95,22 @@ const ProfilePage = () => {
 
   const handleResumeUpload = async (event) => {
     event.preventDefault();
-
     if (!resumeFile) {
-      setError("Please choose a PDF resume first.");
+      toast.error("Please select a PDF resume file first.");
       return;
     }
 
     setUploading(true);
-    setMessage("");
-    setError("");
+    const toastId = toast.loading("Uploading resume PDF...");
 
     try {
       const { data } = await userService.uploadResume(resumeFile);
       setCurrentUser(data.user);
       updateUser(data.user);
       setResumeFile(null);
-      setMessage("Resume uploaded successfully.");
+      toast.success("Resume uploaded successfully! 📄", { id: toastId });
     } catch (err) {
-      setError(getErrorMessage(err, "Unable to upload resume"));
+      toast.error(getErrorMessage(err, "Unable to upload resume"), { id: toastId });
     } finally {
       setUploading(false);
     }
@@ -138,197 +128,189 @@ const ProfilePage = () => {
 
   return (
     <PageShell
-      title="My profile"
-      description="Update your profile details, skills, and resume so employers can find the right fit."
+      title="My Profile & Settings"
+      description="Update your candidate profile details, target skills, resume PDF, and alert preferences."
       actions={[]}
     >
       {loading ? (
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-          <Loader label="Loading profile" />
-        </div>
+        <Loader label="Loading your profile details..." />
       ) : (
-      <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-        <Card className="space-y-5">
-          <div>
-            <Badge variant="info">Profile summary</Badge>
-            <h3 className="mt-3 text-2xl font-semibold text-white">
-              {currentUser?.name || user?.name || "Make your profile discoverable"}
-            </h3>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-5">
-            <p className="text-sm text-slate-400">Visibility</p>
-            <p className="mt-1 text-lg font-semibold text-white">Open to opportunities</p>
-            <p className="mt-2 text-sm text-slate-400">{currentUser?.title || "Add a title to describe your role"}</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-5">
-            <p className="text-sm text-slate-400">Resume</p>
-            <p className="mt-1 text-lg font-semibold text-white">
-              {currentUser?.resumeName || "Upload PDF ready"}
-            </p>
-            <p className="mt-2 text-sm text-slate-400">
-              {currentUser?.resumeUrl
-                ? "Your latest resume is ready for employers."
-                : "Keep a clean version of your resume for applications."}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-5">
-            <p className="text-sm text-slate-400">Current status</p>
-            <p className="mt-1 text-lg font-semibold text-white">{currentUser?.bio || "No bio added yet"}</p>
-          </div>
-        </Card>
-
-        <div className="space-y-6">
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-            {error ? (
-              <div className="md:col-span-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-                {error}
+        <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+          {/* Profile Card Summary */}
+          <Card className="space-y-6">
+            <div className="flex items-center gap-4 border-b border-[var(--border-color)] pb-5">
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 shrink-0">
+                {currentUser?.name?.[0]?.toUpperCase() || user?.name?.[0]?.toUpperCase() || "U"}
               </div>
-            ) : null}
-            {message ? (
-              <div className="md:col-span-2 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">
-                {message}
-              </div>
-            ) : null}
-            <Input
-              label="Name"
-              type="text"
-              value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
-            />
-            <Input
-              label="Title"
-              type="text"
-              placeholder="Frontend Developer"
-              value={form.title}
-              onChange={(event) => setForm({ ...form, title: event.target.value })}
-            />
-            <Input
-              label="Location"
-              type="text"
-              placeholder="Bangalore, India"
-              value={form.location}
-              onChange={(event) => setForm({ ...form, location: event.target.value })}
-            />
-            <Input
-              label="Phone"
-              type="tel"
-              placeholder="+91 90000 00000"
-              value={form.phone}
-              onChange={(event) => setForm({ ...form, phone: event.target.value })}
-            />
-            <Input
-              className="md:col-span-2"
-              label="Skills"
-              type="text"
-              placeholder="React, Node.js, MongoDB"
-              value={form.skills}
-              onChange={(event) => setForm({ ...form, skills: event.target.value })}
-            />
-            <Textarea
-              className="md:col-span-2"
-              label="Bio"
-              placeholder="A short professional summary"
-              value={form.bio}
-              onChange={(event) => setForm({ ...form, bio: event.target.value })}
-            />
-            <div className="md:col-span-2 flex justify-end">
-              <Button type="submit" disabled={saving}>
-                {saving ? "Saving..." : "Save Profile"}
-              </Button>
-            </div>
-          </form>
-
-          <form className="rounded-3xl border border-white/10 bg-white/5 p-6" onSubmit={handleResumeUpload}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Resume Upload</p>
-                <h4 className="mt-2 text-lg font-semibold text-white">Upload your latest PDF resume</h4>
+                <Badge variant="primary">Candidate Profile</Badge>
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mt-1">
+                  {currentUser?.name || user?.name || "Your Name"}
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">{currentUser?.title || "Add professional title"}</p>
               </div>
-              {currentUser?.resumeUrl ? (
-                <Badge variant="success">Ready</Badge>
-              ) : (
-                <Badge variant="warning">Missing</Badge>
-              )}
             </div>
-            <label className="mt-4 block space-y-2">
-              <span className="text-sm font-medium text-slate-200">Resume PDF</span>
-              <input
-                type="file"
-                accept="application/pdf"
-                onChange={(event) => setResumeFile(event.target.files?.[0] || null)}
-                className="block w-full rounded-xl border border-dashed border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-cyan-400 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-950"
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--surface-soft)] space-y-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Location</p>
+                <p className="text-sm font-bold text-[var(--text-primary)]">📍 {currentUser?.location || "Not specified"}</p>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--surface-soft)] space-y-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Resume Document</p>
+                  {currentUser?.resumeUrl ? <Badge variant="success">Uploaded ✓</Badge> : <Badge variant="warning">Missing</Badge>}
+                </div>
+                <p className="text-sm font-bold text-[var(--text-primary)]">{currentUser?.resumeName || "No PDF uploaded yet"}</p>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--surface-soft)] space-y-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Professional Bio</p>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{currentUser?.bio || "Add a short summary to describe your experience."}</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Edit Forms */}
+          <div className="space-y-6">
+            <form className="grid gap-4 sm:grid-cols-2 glass-card p-6" onSubmit={handleSubmit}>
+              <div className="sm:col-span-2 border-b border-[var(--border-color)] pb-3">
+                <h4 className="text-base font-bold text-[var(--text-primary)]">Edit Profile Information</h4>
+                <p className="text-xs text-[var(--text-muted)]">Manage your basic candidate information.</p>
+              </div>
+
+              <Input
+                label="Full Name"
+                value={form.name}
+                onChange={(event) => setForm({ ...form, name: event.target.value })}
               />
-            </label>
-            <div className="mt-4 flex justify-end">
-              <Button type="submit" variant="secondary" disabled={uploading}>
-                {uploading ? "Uploading..." : "Upload Resume"}
-              </Button>
-            </div>
-          </form>
-
-          <form className="rounded-3xl border border-white/10 bg-white/5 p-6" onSubmit={handleSubmit}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Notifications</p>
-                <h4 className="mt-2 text-lg font-semibold text-white">Tune what alerts you receive</h4>
+              <Input
+                label="Professional Title"
+                placeholder="Frontend Developer"
+                value={form.title}
+                onChange={(event) => setForm({ ...form, title: event.target.value })}
+              />
+              <Input
+                label="Location"
+                placeholder="Bangalore, India"
+                value={form.location}
+                onChange={(event) => setForm({ ...form, location: event.target.value })}
+              />
+              <Input
+                label="Phone Number"
+                placeholder="+91 90000 00000"
+                value={form.phone}
+                onChange={(event) => setForm({ ...form, phone: event.target.value })}
+              />
+              <Input
+                className="sm:col-span-2"
+                label="Skills (Comma Separated)"
+                placeholder="React, Node.js, MongoDB, SQL"
+                value={form.skills}
+                onChange={(event) => setForm({ ...form, skills: event.target.value })}
+              />
+              <Textarea
+                className="sm:col-span-2"
+                label="Professional Bio"
+                placeholder="A short summary of your technical experience..."
+                value={form.bio}
+                onChange={(event) => setForm({ ...form, bio: event.target.value })}
+              />
+              <div className="sm:col-span-2 flex justify-end">
+                <Button type="submit" variant="primary" loading={saving}>
+                  Save Profile Changes
+                </Button>
               </div>
-              <Badge variant="info">{form.notificationPrefs.emailDigests ? "Email digest on" : "Email digest off"}</Badge>
-            </div>
+            </form>
 
-            <div className="mt-4 space-y-3">
-              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-200">
+            {/* Resume File Upload */}
+            <form className="glass-card p-6 space-y-4" onSubmit={handleResumeUpload}>
+              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+                <div>
+                  <h4 className="text-base font-bold text-[var(--text-primary)]">Resume Upload (PDF)</h4>
+                  <p className="text-xs text-[var(--text-muted)]">Upload your latest PDF resume for quick application submission.</p>
+                </div>
+                {currentUser?.resumeUrl ? <Badge variant="success">Ready</Badge> : <Badge variant="warning">Missing</Badge>}
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Select PDF Document</span>
                 <input
-                  type="checkbox"
-                  checked={form.notificationPrefs.savedJobUpdates}
-                  onChange={(event) => updateNotificationPref("savedJobUpdates", event.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-transparent text-cyan-400 focus:ring-cyan-400"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(event) => setResumeFile(event.target.files?.[0] || null)}
+                  className="block w-full rounded-xl border border-dashed border-[var(--border-color)] bg-[var(--surface-soft)] p-3 text-xs text-[var(--text-primary)] file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white"
                 />
-                Saved job updates
               </label>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-200">
-                <input
-                  type="checkbox"
-                  checked={form.notificationPrefs.matchedJobs}
-                  onChange={(event) => updateNotificationPref("matchedJobs", event.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-transparent text-cyan-400 focus:ring-cyan-400"
-                />
-                New matching jobs
-              </label>
+              <div className="flex justify-end">
+                <Button type="submit" variant="secondary" loading={uploading}>
+                  Upload Resume PDF 📄
+                </Button>
+              </div>
+            </form>
 
-              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-200">
-                <input
-                  type="checkbox"
-                  checked={form.notificationPrefs.emailDigests}
-                  onChange={(event) => updateNotificationPref("emailDigests", event.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-transparent text-cyan-400 focus:ring-cyan-400"
-                />
-                Email digests
-              </label>
+            {/* Notification Preferences Form */}
+            <form className="glass-card p-6 space-y-4" onSubmit={handleSubmit}>
+              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+                <div>
+                  <h4 className="text-base font-bold text-[var(--text-primary)]">Notification Preferences</h4>
+                  <p className="text-xs text-[var(--text-muted)]">Choose which updates trigger email & in-app alerts.</p>
+                </div>
+                <Badge variant="info">{form.notificationPrefs.emailDigests ? "Digest Active" : "Digests Off"}</Badge>
+              </div>
 
-              <Select
-                label="Digest frequency"
-                value={form.notificationPrefs.digestFrequency}
-                onChange={(event) => updateNotificationPref("digestFrequency", event.target.value)}
-                disabled={!form.notificationPrefs.emailDigests}
-              >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-              </Select>
-            </div>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--surface-soft)] p-3.5 text-xs font-semibold text-[var(--text-primary)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.notificationPrefs.savedJobUpdates}
+                    onChange={(event) => updateNotificationPref("savedJobUpdates", event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-400 bg-transparent text-blue-600"
+                  />
+                  Saved Job Updates & Deadline Reminders
+                </label>
 
-            <p className="mt-4 text-sm text-slate-400">
-              Email digests group your unread alerts into a concise summary so you can catch up in one pass.
-            </p>
+                <label className="flex items-center gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--surface-soft)] p-3.5 text-xs font-semibold text-[var(--text-primary)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.notificationPrefs.matchedJobs}
+                    onChange={(event) => updateNotificationPref("matchedJobs", event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-400 bg-transparent text-blue-600"
+                  />
+                  New Matching Vacancies Discovered
+                </label>
 
-            <div className="mt-4 flex justify-end">
-              <Button type="submit" variant="secondary" disabled={saving}>
-                {saving ? "Saving..." : "Save Notification Preferences"}
-              </Button>
-            </div>
-          </form>
+                <label className="flex items-center gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--surface-soft)] p-3.5 text-xs font-semibold text-[var(--text-primary)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.notificationPrefs.emailDigests}
+                    onChange={(event) => updateNotificationPref("emailDigests", event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-400 bg-transparent text-blue-600"
+                  />
+                  Receive Email Summary Digests
+                </label>
+
+                <Select
+                  label="Digest Summary Frequency"
+                  value={form.notificationPrefs.digestFrequency}
+                  onChange={(event) => updateNotificationPref("digestFrequency", event.target.value)}
+                  disabled={!form.notificationPrefs.emailDigests}
+                >
+                  <option value="daily">Daily Summary</option>
+                  <option value="weekly">Weekly Digest</option>
+                </Select>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button type="submit" variant="secondary" loading={saving}>
+                  Save Alert Settings
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
       )}
     </PageShell>
   );

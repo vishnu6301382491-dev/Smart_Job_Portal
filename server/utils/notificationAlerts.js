@@ -1,10 +1,11 @@
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
+import JobAlert from "../models/JobAlert.js";
+import { sendMatchingJobAlertEmail } from "../services/emailService.js";
+import { matchesLocationQuery } from "./locationHelper.js";
 
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
-
 const extractUserSkills = (user) => (Array.isArray(user?.skills) ? user.skills.map((skill) => String(skill).trim()).filter(Boolean) : []);
 
 const buildSavedJobUpdateMessage = (job, changes = []) => {
@@ -46,9 +47,7 @@ const buildSavedJobUpdateTitle = (job, changes = []) => {
 };
 
 const notifySavedJobFollowers = async ({ job, changes = [], actorId = null }) => {
-  if (!job?._id) {
-    return [];
-  }
+  if (!job?._id) return [];
 
   const recipients = await User.find({
     _id: { $ne: actorId },
@@ -57,9 +56,7 @@ const notifySavedJobFollowers = async ({ job, changes = [], actorId = null }) =>
     "notificationPrefs.savedJobUpdates": { $ne: false },
   }).select("_id");
 
-  if (recipients.length === 0) {
-    return [];
-  }
+  if (recipients.length === 0) return [];
 
   const title = buildSavedJobUpdateTitle(job, changes);
   const message = buildSavedJobUpdateMessage(job, changes);
@@ -81,9 +78,7 @@ const notifySavedJobFollowers = async ({ job, changes = [], actorId = null }) =>
 };
 
 const notifySavedJobDeletion = async ({ job, actorId = null }) => {
-  if (!job?._id) {
-    return [];
-  }
+  if (!job?._id) return [];
 
   const recipients = await User.find({
     _id: { $ne: actorId },
@@ -92,9 +87,7 @@ const notifySavedJobDeletion = async ({ job, actorId = null }) => {
     "notificationPrefs.savedJobUpdates": { $ne: false },
   }).select("_id");
 
-  if (recipients.length === 0) {
-    return [];
-  }
+  if (recipients.length === 0) return [];
 
   return Notification.insertMany(
     recipients.map((recipient) => ({
@@ -113,18 +106,36 @@ const notifySavedJobDeletion = async ({ job, actorId = null }) => {
 };
 
 const notifyMatchingJobs = async ({ job, actorId = null }) => {
-  if (!job?._id || !Array.isArray(job.skills) || job.skills.length === 0) {
-    return [];
+  if (!job?._id) return [];
+
+  // 1. Notify Job Alert Subscribers via Email
+  try {
+    const activeAlerts = await JobAlert.find({ isActive: true }).populate("user", "name email");
+
+    for (const alert of activeAlerts) {
+      if (!alert.user || !alert.user.email) continue;
+      const matchesCity = !alert.city || matchesLocationQuery(job.location, alert.city);
+      const matchesCategory = !alert.category || (job.category || "").toLowerCase().includes(alert.category.toLowerCase());
+
+      if (matchesCity && matchesCategory) {
+        void sendMatchingJobAlertEmail({ user: alert.user, alert, job }).catch((err) => {
+          console.error(`[AUTOMATIC_JOB_ALERT_EMAIL_FAILED] User: ${alert.user.email} | Error:`, err.message);
+        });
+      }
+    }
+  } catch (err) {
+    console.error("[AUTOMATIC_JOB_ALERT_SWEEP_ERROR]", err.message);
   }
+
+  // 2. Notify Job Seekers in App Inbox by Skill Match
+  if (!Array.isArray(job.skills) || job.skills.length === 0) return [];
 
   const skillRegexes = job.skills
     .map((skill) => String(skill).trim())
     .filter(Boolean)
     .map((skill) => new RegExp(`^${escapeRegex(skill)}$`, "i"));
 
-  if (skillRegexes.length === 0) {
-    return [];
-  }
+  if (skillRegexes.length === 0) return [];
 
   const recipients = await User.find({
     _id: { $ne: actorId },
@@ -134,9 +145,7 @@ const notifyMatchingJobs = async ({ job, actorId = null }) => {
     "notificationPrefs.matchedJobs": { $ne: false },
   }).select("_id skills");
 
-  if (recipients.length === 0) {
-    return [];
-  }
+  if (recipients.length === 0) return [];
 
   const jobSkills = job.skills.map((skill) => String(skill).trim()).filter(Boolean);
   const docs = recipients.map((recipient) => {

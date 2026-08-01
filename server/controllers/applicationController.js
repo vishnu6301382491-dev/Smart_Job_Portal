@@ -109,7 +109,16 @@ const updateApplicationStatus = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not allowed to update this application");
   }
 
-  application.status = req.body.status || application.status;
+  const newStatus = req.body.status;
+  if (newStatus && newStatus !== application.status) {
+    application.status = newStatus;
+    application.timeline.push({
+      status: newStatus,
+      note: req.body.notes || `Status updated to ${newStatus}`,
+      updatedAt: new Date(),
+    });
+  }
+
   application.notes = req.body.notes ?? application.notes;
 
   const updatedApplication = await application.save();

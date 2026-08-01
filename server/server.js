@@ -13,6 +13,9 @@ import jobRoutes from "./routes/jobRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import seedAdminUser from "./utils/seedAdmin.js";
 import { scheduleNotificationDigestJobs } from "./utils/notificationDigest.js";
+import agentRoutes from "./routes/agentRoutes.js";
+import alertRoutes from "./routes/alertRoutes.js";
+import { initializeAgentScheduler } from "./services/jobAgent/schedulerService.js";
 import { isMongoConnected } from "./config/db.js";
 
 dotenv.config();
@@ -100,6 +103,8 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/employers", employerRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/agent", agentRoutes);
+app.use("/api/alerts", alertRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -110,6 +115,7 @@ const startServer = async () => {
   await connectDB();
   await seedAdminUser();
   scheduleNotificationDigestJobs();
+  initializeAgentScheduler();
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

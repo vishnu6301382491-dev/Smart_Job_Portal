@@ -25,6 +25,21 @@ const jobSchema = new mongoose.Schema(
       required: [true, "Location is required"],
       trim: true,
     },
+    city: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    state: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    pincode: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     jobType: {
       type: String,
       enum: ["full-time", "part-time", "contract", "internship", "freelance"],
@@ -93,6 +108,10 @@ const jobSchema = new mongoose.Schema(
     },
   }
 );
+
+jobSchema.index({ status: 1, location: 1, category: 1 });
+jobSchema.index({ city: 1, status: 1 });
+jobSchema.index({ title: "text", description: "text", location: "text", category: "text" });
 
 const Job = mongoose.model("Job", jobSchema);
 

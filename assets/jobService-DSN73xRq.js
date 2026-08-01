@@ -1,0 +1,1 @@
+import{e as o}from"./index-B1ddsHP9.js";const p={list:e=>o.get("/jobs",{params:e}),getById:e=>o.get(`/jobs/${e}`),create:e=>o.post("/jobs",e),update:(e,t)=>o.put(`/jobs/${e}`,t),remove:e=>o.delete(`/jobs/${e}`),myJobs:()=>o.get("/jobs/my"),apply:(e,t)=>o.post(`/applications/${e}`,t),myApplications:()=>o.get("/applications/me")};export{p as j};

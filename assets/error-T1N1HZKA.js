@@ -1,0 +1,1 @@
+const s=(e,n="Something went wrong")=>e?.code==="ERR_NETWORK"||!e?.response?"Cannot reach the backend API. Check the Render deployment or configure VITE_API_BASE_URL.":e?.response?.data?.message||e?.message||n;export{s as g};
